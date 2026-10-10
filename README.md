@@ -5,7 +5,7 @@
 ```bash
 npm install
 ```
-- 进入[会员中心](https://vip.ds.163.com/partner-perks), 提取cookie的NTES_YD_PASSPORT字段放进passport.jsonc数组
+- 进入[会员中心](https://vip.ds.163.com/partner-perks), 使用手机号登录, 提取cookie的NTES_YD_PASSPORT字段放进passport.jsonc数组
 
 ### 使用方法(简易), 具体实现请看index.ts末尾注释
 ```bash
