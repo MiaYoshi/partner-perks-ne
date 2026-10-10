@@ -1,9 +1,13 @@
 ## 使用方法
 
 ### 前置条件
-- 安装nodejs
+- 安装nodejs, 安装npm依赖
+```bash
+npm install
+```
+- 进入[会员中心](https://vip.ds.163.com/partner-perks), 提取cookie的NTES_YD_PASSPORT字段放进passport.jsonc数组
 
-### 使用方法（简易）,具体实现请看index.ts末尾注释
+### 使用方法(简易), 具体实现请看index.ts末尾注释
 ```bash
 npx tsx index.ts
 ```
