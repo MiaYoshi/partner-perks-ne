@@ -179,59 +179,58 @@ export type { AuthType, CouponInfoType }
 //
 // 主程序如下:
 //
-// import { readFileSync, writeFileSync } from 'fs'
-// import { resolve } from 'path'
-// import { parse } from 'jsonc-parser'
+import { readFileSync, writeFileSync } from 'fs'
+import { resolve } from 'path'
+import { parse } from 'jsonc-parser'
 
-// async function getAuthByPassports() {
-//   const jsonStr = readFileSync(resolve(import.meta.dirname, './passport.jsonc'), 'utf-8')
-//   const passportList: any[] = parse(jsonStr)
-//   const resp = await Promise.allSettled(
-//     passportList.map((psport) => {
-//       return getAuth(psport)
-//     }),
-//   )
-//   const authList = resp?.map((r: any) => r?.value)
-//   const writeFileResp = writeFileSync(
-//     resolve(import.meta.dirname, './auth.json'),
-//     JSON.stringify(authList, null, 2),
-//     'utf-8',
-//   )
-//   console.log(writeFileResp)
-// }
+export async function getAuthByPassports() {
+  const jsonStr = readFileSync(resolve(import.meta.dirname, './passport.jsonc'), 'utf-8')
+  const passportList: any[] = parse(jsonStr)
+  const resp = await Promise.allSettled(
+    passportList.map((psport) => {
+      return getAuth(psport)
+    }),
+  )
+  const authList = resp?.map((r: any) => r?.value)
+  writeFileSync(resolve(import.meta.dirname, './auth.json'), JSON.stringify(authList, null, 2), 'utf-8')
+  console.log('已写入auth.json, 数组长度为', authList.length)
+}
 
-// async function grantCouponsByAuths() {
-//   const logs: any[] = []
-//   const jsonStr = readFileSync(resolve(import.meta.dirname, './auth.json'), 'utf-8')
-//   const authList: any[] = JSON.parse(jsonStr)
-//   Promise.allSettled(
-//     authList.map((auth, index) => {
-//       // CouponTypeList: ["PHONE_REWARD", "CODE", "DIRECT_LINK"]
-//       return grantAllCoupons(auth, ['PHONE_REWARD']).then((couponRespList) => {
-//         const success = couponRespList?.filter((c: any) => c?.value?.code === 200)
-//         const fail = couponRespList?.filter((c: any) => c?.value?.code !== 200)
-//         logs.push({
-//           index,
-//           success,
-//           fail,
-//           raw: couponRespList,
-//           text: `<=====Passport ${index + 1}=====>\ntotal: ${couponRespList?.length}, success: ${success.length}, fail: ${fail.length}`,
-//         })
-//       })
-//     }),
-//   ).then(() => {
-//     logs.sort((a, b) => a?.index - b?.index)
-//     logs.map(({ raw, text }) => {
-//       console.log(text)
-//       raw?.map((e: any) => {
-//         const { code, coupon = {}, result: _result, ...extra } = e?.value || {}
-//         const obj = { code, name: `${coupon?.brandName}-${coupon?.couponName}`, ...extra }
-//         console.log(obj)
-//       })
-//     })
-//   })
-// }
+export async function grantCouponsByAuths() {
+  const reset = '\x1b[0m'
+  const color = '\x1b[34m'
 
-// 请自行添加定时运行逻辑
+  const logs: any[] = []
+  const jsonStr = readFileSync(resolve(import.meta.dirname, './auth.json'), 'utf-8')
+  const authList: any[] = JSON.parse(jsonStr)
+  return Promise.allSettled(
+    authList.map((auth, index) => {
+      // CouponTypeList: ["PHONE_REWARD", "CODE", "DIRECT_LINK"]
+      return grantAllCoupons(auth, ['PHONE_REWARD']).then((couponRespList) => {
+        const success = couponRespList?.filter((c: any) => c?.value?.code === 200)
+        const fail = couponRespList?.filter((c: any) => c?.value?.code !== 200)
+        logs.push({
+          index,
+          success,
+          fail,
+          raw: couponRespList,
+          text: `${color}Passport ${index + 1}==>\ntotal: ${couponRespList?.length}, success: ${success.length}, fail: ${fail.length}${reset}`,
+        })
+      })
+    }),
+  ).then(() => {
+    logs.sort((a, b) => a?.index - b?.index)
+    logs.map(({ raw, text }) => {
+      console.log(text)
+      raw?.map((e: any) => {
+        const { code, coupon = {}, result: _result, ...extra } = e?.value || {}
+        const obj = { code, name: `${coupon?.brandName}-${coupon?.couponName}`, ...extra }
+        console.log(obj)
+      })
+    })
+  })
+}
+
+// 可以自行添加定时运行逻辑
 // getAuthByPassports()
 // grantCouponsByAuths()
