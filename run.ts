@@ -29,7 +29,7 @@ async function task() {
 // npx tsx run.ts；也可通过第一个命令行参数覆盖目标时间。
 await runFromCli(task, {
   // 修改为需要执行的未来时间
-  // targetTime: dayjs().set('hour', 23).set('minute', 59).set('second', 59).set('millisecond', 900),
+  targetTime: dayjs().set('hour', 23).set('minute', 59).set('second', 59).set('millisecond', 900),
   prepare: prepareTask,
   prepareAheadMs: 60 * 1000,
 })
