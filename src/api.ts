@@ -105,11 +105,9 @@ function grantCoupon(auth: AuthType | undefined, couponInfo: CouponInfoType | un
 /**
  * CouponTypeList: ["PHONE_REWARD", "CODE", "DIRECT_LINK"]
  */
-async function grantAllCoupons(auth: AuthType | undefined, couponTypeList: string[] = ['PHONE_REWARD', 'CODE']) {
-  const coupons = await getSuperCoupons(auth)
-  const availGrantCoupons = coupons?.filter((c: any) => couponTypeList.includes(c?.couponType)) || []
+async function grantAllCoupons(auth: AuthType | undefined, couponList: any[]) {
   return Promise.allSettled(
-    availGrantCoupons?.map(async (coupon) => {
+    couponList?.map(async (coupon) => {
       const res = await grantCoupon(auth, coupon)
       const resp = await res?.json?.()
       return Object.assign({}, resp, { coupon })
@@ -179,34 +177,35 @@ export type { AuthType, CouponInfoType }
 //
 // 主程序如下:
 //
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { parse } from 'jsonc-parser'
 
 export async function getAuthByPassports() {
-  const jsonStr = readFileSync(resolve(import.meta.dirname, './passport.jsonc'), 'utf-8')
-  const passportList: any[] = parse(jsonStr)
-  const resp = await Promise.allSettled(
-    passportList.map((psport) => {
-      return getAuth(psport)
-    }),
-  )
-  const authList = resp?.map((r: any) => r?.value)
-  writeFileSync(resolve(import.meta.dirname, './auth.json'), JSON.stringify(authList, null, 2), 'utf-8')
-  console.log('已写入auth.json, 数组长度为', authList.length)
+  try {
+    const jsonStr = readFileSync(resolve(import.meta.dirname, '../passport.jsonc'), 'utf-8')
+    const passportList: any[] = parse(jsonStr)
+    const resp = await Promise.allSettled(
+      passportList.map((psport) => {
+        return getAuth(psport)
+      }),
+    )
+    const authList = resp?.map((r: any) => r?.value)
+    return authList
+  } catch (e) {
+    console.log('请检查当前目录passport.jsonc是否存在或格式是否正确')
+  }
+  return []
 }
 
-export async function grantCouponsByAuths() {
+export async function grantCouponsByAuths(authList: any[], couponList: any[]) {
   const reset = '\x1b[0m'
   const color = '\x1b[34m'
 
   const logs: any[] = []
-  const jsonStr = readFileSync(resolve(import.meta.dirname, './auth.json'), 'utf-8')
-  const authList: any[] = JSON.parse(jsonStr)
   return Promise.allSettled(
     authList.map((auth, index) => {
-      // CouponTypeList: ["PHONE_REWARD", "CODE", "DIRECT_LINK"]
-      return grantAllCoupons(auth, ['PHONE_REWARD']).then((couponRespList) => {
+      return grantAllCoupons(auth, couponList).then((couponRespList) => {
         const success = couponRespList?.filter((c: any) => c?.value?.code === 200)
         const fail = couponRespList?.filter((c: any) => c?.value?.code !== 200)
         logs.push({
@@ -230,7 +229,3 @@ export async function grantCouponsByAuths() {
     })
   })
 }
-
-// 可以自行添加定时运行逻辑
-// getAuthByPassports()
-// grantCouponsByAuths()
