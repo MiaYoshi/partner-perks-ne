@@ -1,6 +1,6 @@
-import type { ScheduleResult } from '../auto.js'
-import { formatLocalTime } from './time.js'
-import type { TimeInput } from './time.js'
+import type { ScheduleResult } from '@/auto'
+import { formatLocalTime } from './time'
+import type { TimeInput } from './time'
 
 export function printTargetTime(targetTime: TimeInput) {
   console.log('目标时间：', formatLocalTime(targetTime))

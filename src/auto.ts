@@ -1,5 +1,4 @@
-import { toTimestamp } from './scheduler/time.js'
-import type { TimeInput } from './scheduler/time.js'
+import { toTimestamp, type TimeInput } from '@/scheduler/time'
 
 export type ScheduleOptions = {
   /** 提前执行的准备工作，例如读取配置或初始化资源。 */
@@ -87,14 +86,9 @@ function runAt<T>(
           return
         }
         // 同时检查墙上时钟，涵盖两次时钟采样之间被系统暂停的情况。
-        const deviationMs = Math.max(
-          wallStartedAt - localTargetMs,
-          Number(startedNs - deadlineNs) / 1_000_000,
-        )
+        const deviationMs = Math.max(wallStartedAt - localTargetMs, Number(startedNs - deadlineNs) / 1_000_000)
         if (deviationMs > maxLatenessMs) {
-          throw new Error(
-            `已迟到 ${deviationMs.toFixed(3)}ms，超过允许的 ${maxLatenessMs}ms，任务未执行`,
-          )
+          throw new Error(`已迟到 ${deviationMs.toFixed(3)}ms，超过允许的 ${maxLatenessMs}ms，任务未执行`)
         }
 
         waiting = false
@@ -102,12 +96,13 @@ function runAt<T>(
         const value = task()
         cleanup()
         Promise.resolve(value).then(
-          (value) => resolve({
-            value,
-            scheduledAt: localTargetMs,
-            startedAt: localTargetMs + deviationMs,
-            deviationMs,
-          }),
+          (value) =>
+            resolve({
+              value,
+              scheduledAt: localTargetMs,
+              startedAt: localTargetMs + deviationMs,
+              deviationMs,
+            }),
           reject,
         )
       } catch (error) {

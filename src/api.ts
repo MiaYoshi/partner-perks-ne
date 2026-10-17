@@ -179,12 +179,12 @@ export type { AuthType, CouponInfoType }
 //
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { parse } from 'jsonc-parser'
+import stripJsonComments from 'strip-json-comments'
 
 export async function getAuthByPassports() {
   try {
-    const jsonStr = readFileSync(resolve(import.meta.dirname, '../passport.jsonc'), 'utf-8')
-    const passportList: any[] = parse(jsonStr)
+    const jsonStr = readFileSync(resolve(import.meta.dirname, '../passport.json'), 'utf-8')
+    const passportList: any[] = JSON.parse(stripJsonComments(jsonStr))
     const resp = await Promise.allSettled(
       passportList.map((psport) => {
         return getAuth(psport)

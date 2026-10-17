@@ -1,21 +1,28 @@
 {
   "name": "netease",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Netease automated coupon scheduler",
+  "type": "module",
+  "main": "dist/index.cjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx run.ts",
+    "typecheck": "tsc --noEmit",
+    "prebuild": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
+    "build": "esbuild run.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.cjs --sourcemap",
+    "start": "node dist/index.cjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
-  "devDependencies": {
-    "@types/node": "^26.6.3"
-  },
   "dependencies": {
     "cookie": "^2.0.1",
     "dayjs": "^1.11.23",
-    "jsonc-parser": "^3.3.1"
+    "strip-json-comments": "^5.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
   }
 }
