@@ -177,14 +177,21 @@ export type { AuthType, CouponInfoType }
 //
 // 主程序如下:
 //
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { resolve } from 'path'
-import stripJsonComments from 'strip-json-comments'
+import JSON5 from 'json5'
 
 export async function getAuthByPassports() {
   try {
-    const jsonStr = readFileSync(resolve(import.meta.dirname, '../passport.json'), 'utf-8')
-    const passportList: any[] = JSON.parse(stripJsonComments(jsonStr))
+    // 优先读取 passport.jsonc，不存在则回退读取 passport.json
+    const rootDir = process.cwd()
+    console.log('当前目录：', rootDir)
+    let filePath = resolve(rootDir, 'passport.jsonc')
+    if (!existsSync(filePath)) {
+      filePath = resolve(rootDir, 'passport.json')
+    }
+    const jsonStr = readFileSync(filePath, 'utf-8')
+    const passportList: any[] = JSON5.parse(jsonStr)
     const resp = await Promise.allSettled(
       passportList.map((psport) => {
         return getAuth(psport)
@@ -192,7 +199,8 @@ export async function getAuthByPassports() {
     )
     const authList = resp?.map((r: any) => r?.value)
     return authList
-  } catch (e) {
+  } catch (e: any) {
+    console.error('读取 passport 配置失败:', e.message)
     console.log('请检查当前目录passport.jsonc是否存在或格式是否正确')
   }
   return []
