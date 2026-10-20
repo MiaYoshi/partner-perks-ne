@@ -1,5 +1,5 @@
 import dayjs, { type Dayjs } from 'dayjs'
-import { getAuthByPassports, getSuperCoupons, grantCouponsByAuths } from '@/api'
+import { getAuthByPassports, getSuperCoupons, grantCouponsByAuths, maskSensitive } from '@/api'
 import { runFromCli } from '@/scheduler/cli'
 import { parseArgs } from 'node:util'
 
@@ -15,6 +15,12 @@ async function prepareTask() {
   console.log('=================================>\n准备函数开始执行')
   authList = await getAuthByPassports()
   console.log('已获取到 authList, 数组长度为', authList?.length)
+  authList?.length &&
+    authList?.map(({ xsrfToken, jSessionId, glUid }, index) => {
+      console.log(
+        `Passport ${index + 1}==>xsrfToken: ${maskSensitive(xsrfToken)}, jSessionId: ${maskSensitive(jSessionId)}, glUid: ${maskSensitive(glUid)}`,
+      )
+    })
   couponList = authList?.length > 0 ? await getSuperCoupons(authList?.[0]) : []
   filterCouponList = couponList?.filter((c: any) => couponTypeList.includes(c?.couponType)) || []
   console.log('已获取到 couponList, 数组长度为', couponList?.length, ', 过滤后长度为', filterCouponList?.length)

@@ -15,7 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cookie": "^2.0.1",
     "dayjs": "^1.11.23",
     "json5": "^2.2.3"
   },

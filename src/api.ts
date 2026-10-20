@@ -1,5 +1,4 @@
 import crypto from 'crypto'
-import { parseCookie } from 'cookie'
 
 export const GRANT_URL = 'https://inf.ds.163.com/v1/web/exp-vip/external/super-coupon/grant'
 export const SUPER_COUPON_URL = 'https://inf.ds.163.com/v1/web/exp-vip/external/super-coupon/info'
@@ -24,6 +23,80 @@ function getSHA1(data: any) {
     .update(data, 'utf8') // 如果 data 是 Buffer，不需要指定编码
     .digest('hex')
 }
+
+export interface CookieOptions {
+  /** 是否过滤掉已过期的 Cookie（例如 Max-Age=0 或 Expires 为过去时间），默认为 true */
+  filterExpired?: boolean
+}
+
+/**
+ * 解析 Set-Cookie 字符串数组为键值对对象
+ */
+function parseSetCookies(
+  setCookieHeaders: string[],
+  options: CookieOptions = { filterExpired: true },
+): Record<string, string> {
+  const cookieMap: Record<string, string> = {}
+
+  for (const header of setCookieHeaders) {
+    if (!header || typeof header !== 'string') continue
+
+    // 按分号切分属性段
+    const parts = header.split(';').map((p) => p.trim())
+    const [mainPair, ...attributes] = parts
+
+    // 判断 mainPair 是否存在
+    if (!mainPair) continue
+
+    // 解析主键值对（第一个分号前的内容）
+    const equalIndex = mainPair.indexOf('=')
+    if (equalIndex === -1) continue
+
+    const key = mainPair.slice(0, equalIndex).trim()
+    let value = mainPair.slice(equalIndex + 1).trim()
+
+    // 去除双引号包裹（如 SESSION=""）
+    if (value.startsWith('"') && value.endsWith('"')) {
+      value = value.slice(1, -1)
+    }
+
+    if (options.filterExpired) {
+      const isExpired = attributes.some((attr) => {
+        const lower = attr.toLowerCase()
+        if (lower === 'max-age=0') return true
+
+        if (lower.startsWith('expires=')) {
+          const expiresDate = new Date(attr.slice(8))
+          return !isNaN(expiresDate.getTime()) && expiresDate.getTime() <= Date.now()
+        }
+        return false
+      })
+
+      if (isExpired || value === '') {
+        delete cookieMap[key]
+        continue
+      }
+    }
+
+    cookieMap[key] = value
+  }
+
+  return cookieMap
+}
+
+/**
+ * 敏感信息脱敏：固定输出 10 位字符（头 1 位 + 8 个 * + 尾 1 位）
+ * 空值或空字符串直接返回空字符串
+ */
+function maskSensitive(val?: string | null): string {
+  if (!val) return ''
+
+  const head = val[0]
+  const tail = val[val.length - 1]
+
+  return `${head}${'*'.repeat(8)}${tail}`
+}
+
 function customFetch(
   auth: AuthType | undefined,
   input: Parameters<typeof fetch>[0],
@@ -136,7 +209,7 @@ async function getAuth(ntesYdPassport: string | undefined): Promise<AuthType> {
     return Promise.reject()
   }
   const r = await login(ntesYdPassport)
-  const cookie = parseCookie(r.headers.getSetCookie().join(';'))
+  const cookie = parseSetCookies(r.headers.getSetCookie())
   return {
     xsrfToken: cookie?.['GL-XSRF-TOKEN'] || '',
     jSessionId: cookie?.['JSESSIONID'] || '',
@@ -160,6 +233,8 @@ export {
   login,
   getAuth,
   formatTime,
+  parseSetCookies,
+  maskSensitive,
 }
 
 export type { AuthType, CouponInfoType }
